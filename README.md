@@ -10,4 +10,4 @@ Install dependencies with:
 `poetry install --no-root` 
 
 Run script with:
-`poetry run python app.py`
+`poetry run python mentions.py`
