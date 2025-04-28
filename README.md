@@ -20,4 +20,4 @@ MESSAGE_REQUIRED_CONTENT = 'some required message'
 ALLOWED_ROLES = comma,separated,roles
 ```
 Run script with:
-`poetry run python mentions.py`
+`poetry run python app.py`
