@@ -86,7 +86,7 @@ async def log_messages(ctx, year: int, month: int, *args):
         await ctx.send("❌ Invalid date.")
         return
 
-    channel = bot.get_channel(SYNC_SOURCE_CHANNEL_ID)
+    channel = bot.get_channel(LOG_SOURCE_CHANNEL_ID)
     if channel is None:
         await ctx.send("❌ Channel not found.")
         return
@@ -104,8 +104,8 @@ async def log_messages(ctx, year: int, month: int, *args):
         for i in range(1, 8):  # up to 7 mentions
             headers.extend([f"mention_{i}_username", f"mention_{i}_server_nick"])
         writer.writerow(headers)
-
-        async for idx, message in enumerate(channel.history(after=start, before=end, oldest_first=True), start=1):
+        idx = 1
+        async for message in channel.history(after=start, before=end, oldest_first=True):
             date = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
             author_username = message.author.name
             author_nick = message.author.display_name
@@ -124,10 +124,11 @@ async def log_messages(ctx, year: int, month: int, *args):
 
             writer.writerow(row)
             message_count += 1
+            idx += 1
 
     try:
         await ctx.author.send(
-            content=f"📄 Log of {message_count} messages from {channel.mention} on {year}-{month:02}-{day:02}:",
+            content=f"📄 Log of {message_count} messages from {channel.mention} on {label}:",
             file=discord.File(log_file)
         )
         await ctx.send("✅ Log sent to your DMs!")
@@ -141,6 +142,7 @@ async def on_message(message):
     if (message.channel.id != SYNC_SOURCE_CHANNEL_ID or 
         message.author.bot or 
         MESSAGE_REQUIRED_CONTENT not in message.content):
+        await bot.process_commands(message)
         return
 
     thread = bot.get_channel(SYNC_TARGET_THREAD_ID)
@@ -148,6 +150,9 @@ async def on_message(message):
         copied_message = await thread.send(create_synced_message(message))
         message_mapping[message.id] = copied_message.id
         save_mappings()
+        
+    await bot.process_commands(message)
+
 
 @bot.event
 async def on_message_edit(before, after):
@@ -198,6 +203,5 @@ async def on_command_error(ctx, error):
         await ctx.send("🚫 You don’t have permission to use this command.")
     else:
         raise error  # Optional: re-raise unhandled errors
-
 
 bot.run(TOKEN)
